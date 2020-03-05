@@ -1,12 +1,23 @@
-matrix:
-  include:
-    - language: java
-      jdk: openjdk11
-      dist: xenial
-      before_install:
-        - chmod +x gradlew
-      script:
-        - ./gradlew build
+language: java
+jdk: openjdk11
+dist: xenial
+before_install:
+  - chmod +x gradlew
+script:
+  - ./gradlew build
 
 notifications:
   email: false
+
+addons:
+  artifacts:
+    s3_region: "ap-southeast-2"
+
+deploy:
+  provider: s3
+  access_key_id: $ARTIFACTS_KEY
+  secret_access_key: $ARTIFACTS_SECRET
+  bucket: $ARTIFACTS_BUCKET
+  glob: "cloudformation-template.yml"
+  skip_cleanup: true
+  region: "ap-southeast-2"

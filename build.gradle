@@ -23,7 +23,10 @@ ext {
 }
 
 group 'nz.org.vincenzo'
-version '1.0.0'
+def onTravisCI = System.getenv("TRAVIS_BUILD_NUMBER") != null
+project.ext.set("buildNumber", onTravisCI ? System.getenv("TRAVIS_BUILD_NUMBER") : "DEV-SNAPSHOT")
+def versionNumber = System.getenv("VERSION_NUMBER") != null ? System.getenv("VERSION_NUMBER") : "1.0"
+version = "$versionNumber.$project.ext.buildNumber"
 sourceCompatibility = '11'
 
 repositories {
