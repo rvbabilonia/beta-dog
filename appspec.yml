@@ -1,0 +1,11 @@
+version: 0.0
+Resources:
+  - InstrumentsFunction:
+      Type: AWS::Lambda::Function
+      Properties:
+        Name: "instrumentsFunction"
+        CurrentVersion: "1"
+        TargetVersion: "2"
+Hooks:
+  - BeforeAllowTraffic: "LambdaFunctionToValidateBeforeTrafficShift"
+  - AfterAllowTraffic: "LambdaFunctionToValidateAfterTrafficShift"

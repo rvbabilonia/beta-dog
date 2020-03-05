@@ -14,6 +14,7 @@ ext {
     commonsLangVersion = '3.9'
     awsJavaSdkVersion = '1.11.737'
     awsLambdaJavaCoreVersion = '1.2.0'
+    awsLambdaJavaEventsVersion = '2.2.7'
     awsLambdaJavaLog4JVersion = '1.0.0'
     gsonVersion = '2.8.6'
 
@@ -43,6 +44,7 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:$commonsLangVersion"
     implementation "com.amazonaws:aws-java-sdk-lambda:$awsJavaSdkVersion"
     implementation "com.amazonaws:aws-lambda-java-core:$awsLambdaJavaCoreVersion"
+    implementation "com.amazonaws:aws-lambda-java-events:$awsLambdaJavaEventsVersion"
     implementation "com.amazonaws:aws-lambda-java-log4j:$awsLambdaJavaLog4JVersion"
     implementation "com.google.code.gson:gson:$gsonVersion"
 
@@ -88,16 +90,16 @@ task buildZip(type: Zip) {
     from compileJava
     from processResources
     into('lib') {
-        from configurations.runtime
+        from configurations.runtimeClasspath
     }
 }
 
-task copyTemplate(type: Copy) {
-    from 'cloudformation-template.yml'
-    into 'build/libs'
+task copySpecification(type: Copy) {
+    from 'appspec.yml'
+    into 'build/distributions'
 }
 
-build.dependsOn copyTemplate, buildZip
+build.dependsOn buildZip, copySpecification
 
 bootJar {
     mainClassName = "nz.org.vincenzo.betadog.BetaDogApplication"
