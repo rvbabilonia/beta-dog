@@ -116,7 +116,9 @@ public class ScrapeServiceImpl
     }
 
     private static WebClient getWebClient() {
-        HttpClient httpClient = HttpClient.create();
+        HttpClient httpClient = HttpClient.create()
+                .tcpConfiguration(tcpClient ->
+                        tcpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5 * 60 * 1000));
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
 
         return WebClient.builder().clientConnector(connector).build();

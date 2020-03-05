@@ -92,7 +92,12 @@ task buildZip(type: Zip) {
     }
 }
 
-build.dependsOn buildZip
+task copyTemplate(type: Copy) {
+    from 'cloudformation-template.yml'
+    into 'build/libs'
+}
+
+build.dependsOn copyTemplate, buildZip
 
 bootJar {
     mainClassName = "nz.org.vincenzo.betadog.BetaDogApplication"
