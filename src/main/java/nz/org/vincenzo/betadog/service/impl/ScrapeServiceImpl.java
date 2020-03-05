@@ -2,6 +2,7 @@ package nz.org.vincenzo.betadog.service.impl;
 
 import fr.whimtrip.ext.jwhthtmltopojo.HtmlToPojoEngine;
 import fr.whimtrip.ext.jwhthtmltopojo.intrf.HtmlAdapter;
+import io.netty.channel.ChannelOption;
 import nz.org.vincenzo.betadog.domain.Instrument;
 import nz.org.vincenzo.betadog.domain.MainBoard;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
