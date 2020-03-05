@@ -1,0 +1,94 @@
+plugins {
+    id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+    id 'org.unbroken-dome.test-sets' version '2.2.1'
+    id 'org.owasp.dependencycheck' version '5.3.0'
+    id 'com.github.ben-manes.versions' version '0.27.0'
+}
+
+ext {
+    springCloudVersion = 'Hoxton.SR1'
+    reactorVersion = '1.0.1.RELEASE'
+    htmlToPojoVersion = '1.0.2'
+    commonsLangVersion = '3.9'
+    awsJavaSdkVersion = '1.11.737'
+    awsLambdaJavaCoreVersion = '1.2.0'
+    awsLambdaJavaLog4JVersion = '1.0.0'
+    gsonVersion = '2.8.6'
+
+    assertjVersion = '3.15.0'
+    mockitoVersion = '3.3.1'
+    restAssuredVersion = '4.2.0'
+}
+
+group 'nz.org.vincenzo'
+version '1.0.0'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-webflux"
+    implementation "org.projectreactor:reactor-spring:$reactorVersion"
+    implementation "fr.whimtrip:whimtrip-ext-htmltopojo:$htmlToPojoVersion"
+    implementation "org.apache.commons:commons-lang3:$commonsLangVersion"
+    implementation "com.amazonaws:aws-java-sdk-lambda:$awsJavaSdkVersion"
+    implementation "com.amazonaws:aws-lambda-java-core:$awsLambdaJavaCoreVersion"
+    implementation "com.amazonaws:aws-lambda-java-log4j:$awsLambdaJavaLog4JVersion"
+    implementation "com.google.code.gson:gson:$gsonVersion"
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude group: "org.junit.vintage", module: "junit-vintage-engine"
+    }
+    testImplementation "org.assertj:assertj-core:$assertjVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
+    testImplementation "io.rest-assured:spring-mock-mvc:$restAssuredVersion"
+    testImplementation "io.rest-assured:xml-path:$restAssuredVersion"
+    testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
+    testImplementation "io.rest-assured:rest-assured-common:$restAssuredVersion"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencyUpdates {
+    gradleReleaseChannel = 'current'
+    resolutionStrategy = {
+        componentSelection { rules ->
+            rules.all { ComponentSelection selection ->
+                def version = selection.candidate.version.toLowerCase()
+                if (version.contains('alpha') || version.contains('beta')
+                        || version.contains('snapshot') || version.contains('rc')
+                        || version ==~ '[0-9]+\\.[0-9]+\\.[0-9]+(?:-b|.m|-M)[0-9]+(\\.)?[0-9]*') {
+                    selection.reject('Not a release')
+                }
+            }
+        }
+    }
+}
+
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+build.dependsOn buildZip
+
+bootJar {
+    mainClassName = "nz.org.vincenzo.betadog.BetaDogApplication"
+}

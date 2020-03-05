@@ -1,0 +1,12 @@
+matrix:
+  include:
+    - language: java
+      jdk: openjdk11
+      dist: xenial
+      before_install:
+        - chmod +x gradlew
+      script:
+        - ./gradlew build
+
+notifications:
+  email: false
