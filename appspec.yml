@@ -3,7 +3,8 @@ Resources:
   - InstrumentsFunction:
       Type: AWS::Lambda::Function
       Properties:
-        Name: "instrumentsFunction"
+        Name: "InstrumentsFunction"
+        Alias: "InstrumentsFunctionAlias"
         CurrentVersion: "1"
         TargetVersion: "2"
 Hooks:
