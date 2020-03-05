@@ -34,7 +34,9 @@ repositories {
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-webflux"
     implementation "org.projectreactor:reactor-spring:$reactorVersion"
-    implementation "fr.whimtrip:whimtrip-ext-htmltopojo:$htmlToPojoVersion"
+    implementation("fr.whimtrip:whimtrip-ext-htmltopojo:$htmlToPojoVersion") {
+        exclude group: "org.slf4j", module: "slf4j-simple"
+    }
     implementation "org.apache.commons:commons-lang3:$commonsLangVersion"
     implementation "com.amazonaws:aws-java-sdk-lambda:$awsJavaSdkVersion"
     implementation "com.amazonaws:aws-lambda-java-core:$awsLambdaJavaCoreVersion"
