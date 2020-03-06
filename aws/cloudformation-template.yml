@@ -95,7 +95,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: beta-dog
-        S3Key: beta-dog-1.0.10.zip
+        S3Key: beta-dog-1.0.11.zip
       FunctionName: instruments
       Handler: 'nz.org.vincenzo.betadog.handler.ScrapeRequestHandler::handleRequest'
       MemorySize: '512'

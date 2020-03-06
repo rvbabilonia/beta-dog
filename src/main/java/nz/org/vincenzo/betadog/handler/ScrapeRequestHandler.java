@@ -3,7 +3,7 @@ package nz.org.vincenzo.betadog.handler;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.google.gson.Gson;
-import nz.org.vincenzo.betadog.BetaDogApplication;
+import nz.org.vincenzo.betadog.configuration.BetaDogConfiguration;
 import nz.org.vincenzo.betadog.domain.Instrument;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
@@ -29,7 +29,7 @@ public class ScrapeRequestHandler
     private static final Logger LOGGER = LoggerFactory.getLogger(ScrapeRequestHandler.class);
 
     private static final ApplicationContext APPLICATION_CONTEXT =
-            new AnnotationConfigApplicationContext(BetaDogApplication.class);
+            new AnnotationConfigApplicationContext(BetaDogConfiguration.class);
 
     @Override
     public Response handleRequest(Request request, Context context) {

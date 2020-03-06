@@ -11,7 +11,7 @@ sorts them according to price-to-earning ratio or earnings per share to aid an i
 
 ## Usage
 
-1. To view all the instruments, go to `https://x/api/v1/instruments`.
+1. To view all the instruments, go to `https://API_GATEWAY/v1/instruments`.
 
 2. Available query parameters are `filter` which can be `ALL` (default), `EQUITIES` or `FUNDS` and `order` which can be
 `DEFAULT` (default), `PE_RATIO` or `EPS`.
