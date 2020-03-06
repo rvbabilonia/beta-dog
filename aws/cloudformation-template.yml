@@ -18,21 +18,6 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess'
         - 'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaRole'
-      Policies:
-        - PolicyName: LambdaDynamoDBPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'dynamodb:PutItem'
-                  - 'dynamodb:DeleteItem'
-                  - 'dynamodb:GetItem'
-                  - 'dynamodb:Scan'
-                  - 'dynamodb:Query'
-                  - 'dynamodb:UpdateItem'
-                Resource:
-                  - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*'
 
   BetaDogApi:
     Type: 'AWS::ApiGateway::RestApi'
@@ -47,7 +32,7 @@ Resources:
       RestApiId: !Ref BetaDogApi
       PathPart: 'v1'
 
-  BetaDogResource:
+  InstrumentsResource:
     Type: 'AWS::ApiGateway::Resource'
     Properties:
       ParentId: !Ref V1Resource
@@ -60,12 +45,12 @@ Resources:
       AuthorizationType: 'NONE'
       HttpMethod: 'GET'
       Integration:
-        IntegrationHttpMethod: 'GET'
+        IntegrationHttpMethod: 'POST'
         Type: 'AWS_PROXY'
         Uri: !Sub
           - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations'
           - lambdaArn: !GetAtt InstrumentsFunction.Arn
-      ResourceId: !Ref BetaDogResource
+      ResourceId: !Ref InstrumentsResource
       RestApiId: !Ref BetaDogApi
 
   InstrumentsOptionsMethod:
@@ -73,7 +58,7 @@ Resources:
     Properties:
       AuthorizationType: NONE
       RestApiId: !Ref BetaDogApi
-      ResourceId: !Ref BetaDogResource
+      ResourceId: !Ref InstrumentsResource
       HttpMethod: OPTIONS
       Integration:
         IntegrationResponses:
@@ -109,12 +94,12 @@ Resources:
     Type: 'AWS::Lambda::Function'
     Properties:
       Code:
-        S3Bucket: beta-dog-functions
-        S3Key: beta-dog-1.0.0.zip
+        S3Bucket: beta-dog
+        S3Key: beta-dog-1.0.10.zip
       FunctionName: instruments
       Handler: 'nz.org.vincenzo.betadog.handler.ScrapeRequestHandler::handleRequest'
       MemorySize: '512'
-      Timeout: '60'
+      Timeout: '180'
       TracingConfig:
         Mode: Active
       Runtime: java11
