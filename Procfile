@@ -1,1 +1,1 @@
-web: java -jar build/libs/beta-dog.jar -p $PORT
+web: java -Dserver.port=$PORT $JAVA_OPTS -jar build/libs/beta-dog.jar
