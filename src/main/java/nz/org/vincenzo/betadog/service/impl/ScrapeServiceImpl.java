@@ -8,22 +8,19 @@ import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.InstrumentType;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
 import nz.org.vincenzo.betadog.service.ScrapeService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -35,8 +32,6 @@ import java.util.stream.Collectors;
 @CacheConfig(cacheNames = {"mainBoard", "instruments"})
 public class ScrapeServiceImpl
         implements ScrapeService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ScrapeServiceImpl.class);
 
     private static final String MARKETS = "/markets/NZSX";
 
@@ -52,53 +47,29 @@ public class ScrapeServiceImpl
 
     private final HtmlToPojoEngine engine;
 
-    private final WebClient webClient;
+    private final RestTemplate restTemplate;
 
     /**
      * Default constructor.
      *
-     * @param engine    the {@link HtmlToPojoEngine}
-     * @param webClient the {@link WebClient}
+     * @param engine       the {@link HtmlToPojoEngine}
+     * @param restTemplate the {@link RestTemplate}
      */
     @Autowired
-    public ScrapeServiceImpl(HtmlToPojoEngine engine, WebClient webClient) {
+    public ScrapeServiceImpl(HtmlToPojoEngine engine, RestTemplate restTemplate) {
         this.engine = engine;
-        this.webClient = webClient;
+        this.restTemplate = restTemplate;
     }
 
     @Cacheable("mainBoard")
     @Override
     public MainBoard getMainBoard() {
-        Mono<String> mono = webClient
-                .get()
-                .uri(MARKETS)
-                .accept(MediaType.TEXT_HTML)
-                .retrieve()
-                .bodyToMono(String.class);
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity("https://www.nzx.com" + MARKETS, String.class);
 
-        AtomicReference<String> html = new AtomicReference<>();
-        Disposable disposable = mono.subscribe(html::set);
-
-        int i = 0;
-        do {
-            i++;
-            if (i == 5) {
-                html.set("");
-            }
-            try {
-                LOGGER.info("Waiting for [NZSX]...");
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                LOGGER.error(e.getMessage());
-            }
-        } while (html.get() == null);
-
-        disposable.dispose();
-
-        if (!html.get().isBlank()) {
+        if (HttpStatus.OK == responseEntity.getStatusCode() && StringUtils.isNotBlank(responseEntity.getBody())) {
             HtmlAdapter<MainBoard> adapter = engine.adapter(MainBoard.class);
 
-            return adapter.fromHtml(html.get());
+            return adapter.fromHtml(responseEntity.getBody());
         } else {
             return new MainBoard();
         }
@@ -107,36 +78,13 @@ public class ScrapeServiceImpl
     @Cacheable("instruments")
     @Override
     public Instrument getInstrument(final String code) {
-        Mono<String> mono = webClient
-                .get()
-                .uri(INSTRUMENTS + code)
-                .accept(MediaType.TEXT_HTML)
-                .retrieve()
-                .bodyToMono(String.class);
+        ResponseEntity<String> responseEntity = restTemplate.getForEntity("https://www.nzx.com" + INSTRUMENTS + code,
+                String.class);
 
-        AtomicReference<String> html = new AtomicReference<>();
-        Disposable disposable = mono.subscribe(html::set);
-
-        int i = 0;
-        do {
-            i++;
-            if (i == 5) {
-                html.set("");
-            }
-            try {
-                LOGGER.info("Waiting for [{}]...", code);
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                LOGGER.error(e.getMessage());
-            }
-        } while (html.get() == null);
-
-        disposable.dispose();
-
-        if (!html.get().isBlank()) {
+        if (HttpStatus.OK == responseEntity.getStatusCode() && StringUtils.isNotBlank(responseEntity.getBody())) {
             HtmlAdapter<Instrument> adapter = engine.adapter(Instrument.class);
 
-            return adapter.fromHtml(html.get());
+            return adapter.fromHtml(responseEntity.getBody());
         } else {
             Instrument.Snapshot snapshot = new Instrument.Snapshot();
             snapshot.setCode(code);
@@ -157,7 +105,7 @@ public class ScrapeServiceImpl
                 .getSecurities()
                 .parallelStream()
                 .map(security -> getInstrument(security.getCode()))
-                .collect(Collectors.toCollection(LinkedList::new));
+                .collect(Collectors.toList());
 
         if (InstrumentFilter.EQUITIES == instrumentFilter) {
             instruments = instruments
@@ -168,7 +116,7 @@ public class ScrapeServiceImpl
                         return EQUITIES.contains(instrumentType)
                                || UNITS_IN_EQUITY.contains(instrument.getSnapshot().getCode());
                     })
-                    .collect(Collectors.toCollection(LinkedList::new));
+                    .collect(Collectors.toList());
         } else if (InstrumentFilter.FUNDS == instrumentFilter) {
             instruments = instruments
                     .stream()
@@ -178,7 +126,7 @@ public class ScrapeServiceImpl
                         return InstrumentType.FUND == instrumentType
                                || UNITS_IN_FUND.contains(instrument.getSnapshot().getCode());
                     })
-                    .collect(Collectors.toCollection(LinkedList::new));
+                    .collect(Collectors.toList());
         }
 
         if (SortOrder.PE_RATIO == sortOrder) {
@@ -187,14 +135,14 @@ public class ScrapeServiceImpl
                     .stream()
                     .sorted(Comparator.comparingDouble(instrument -> instrument.getFundamental().getPriceToEarningsRatio()))
                     .filter(instrument -> instrument.getFundamental().getPriceToEarningsRatio() > 0)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
         } else if (SortOrder.EPS == sortOrder) {
             // the higher the better
             instruments = instruments
                     .stream()
                     .sorted(Comparator.comparingDouble(instrument -> instrument.getFundamental().getEarningsPerShare()))
                     .filter(instrument -> instrument.getFundamental().getEarningsPerShare() > 0)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
             Collections.reverse(instruments);
         } else {
             instruments.sort(Comparator.comparing(instrument -> instrument.getSnapshot().getCode()));

@@ -2,7 +2,6 @@ package nz.org.vincenzo.betadog.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nz.org.vincenzo.betadog.configuration.ProxyConfiguration;
 import nz.org.vincenzo.betadog.domain.Instrument;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
@@ -16,7 +15,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -40,9 +38,6 @@ class ScrapeControllerTest {
 
     @MockBean
     private ScrapeService scrapeService;
-
-    @MockBean
-    private ProxyConfiguration proxyConfiguration;
 
     @Test
     void getInstruments() throws JsonProcessingException {

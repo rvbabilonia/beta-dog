@@ -1,8 +1,0 @@
-spring:
-  profiles: test
-
-proxy:
-  enabled: false
-  type: HTTP
-  hostname: "http://hostname"
-  port: 3128

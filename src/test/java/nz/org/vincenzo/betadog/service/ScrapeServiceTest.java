@@ -2,49 +2,46 @@ package nz.org.vincenzo.betadog.service;
 
 import fr.whimtrip.ext.jwhthtmltopojo.HtmlToPojoEngine;
 import nz.org.vincenzo.betadog.domain.Instrument;
+import nz.org.vincenzo.betadog.domain.MainBoard;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
 import nz.org.vincenzo.betadog.service.impl.ScrapeServiceImpl;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * The test case for {@link ScrapeService}.
  *
  * @author Rey Vincent Babilonia
  */
+@ExtendWith(MockitoExtension.class)
 class ScrapeServiceTest {
 
-    private static MockWebServer mockWebServer;
+    @Spy
+    private HtmlToPojoEngine engine = HtmlToPojoEngine.create();
 
-    private static ScrapeService scrapeService;
+    @Mock
+    private RestTemplate restTemplate;
 
-    @BeforeAll
-    static void setUp() throws IOException {
-        System.setProperty("io.netty.tryReflectionSetAccessible", "false");
-
-        mockWebServer = new MockWebServer();
-        mockWebServer.start();
-
-        HtmlToPojoEngine engine = HtmlToPojoEngine.create();
-        WebClient webClient = WebClient.create(String.format("http://localhost:%s", mockWebServer.getPort()));
-
-        scrapeService = new ScrapeServiceImpl(engine, webClient);
-    }
-
-    @AfterAll
-    static void tearDown() throws IOException {
-        mockWebServer.shutdown();
-    }
+    @InjectMocks
+    private ScrapeServiceImpl scrapeService;
 
     @Test
     void getMainBoard() {
@@ -197,22 +194,28 @@ class ScrapeServiceTest {
                       + "    </tbody>"
                       + "</table>";
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(body)
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.getBody()).thenReturn(body);
+        when(responseEntity.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/markets/NZSX"), eq(String.class)))
+                .thenReturn(responseEntity);
 
         assertThat(scrapeService.getMainBoard().getSecurities())
                 .hasSize(3)
                 .first()
                 .extracting("code", "company")
                 .containsExactly("AFI", "Australian Foundation Investment Company Limited");
+
+        verify(engine).adapter(MainBoard.class);
     }
 
     @Test
     void getInstrument() {
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getAIR())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> responseEntity = mock(ResponseEntity.class);
+        when(responseEntity.getBody()).thenReturn(getAIR());
+        when(responseEntity.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/AIR"), eq(String.class)))
+                .thenReturn(responseEntity);
 
         Instrument instrument = scrapeService.getInstrument("AIR");
 
@@ -222,6 +225,8 @@ class ScrapeServiceTest {
                         "fundamental.priceToEarningsRatio", "fundamental.earningsPerShare")
                 .containsExactly("AIR", "Air New Zealand Limited (NS)", "Ordinary Shares",
                         2.060, 2.055, 1.950, 10.570, 0.195);
+
+        verify(engine).adapter(Instrument.class);
     }
 
     @Test
@@ -239,6 +244,8 @@ class ScrapeServiceTest {
                 .containsExactly("AIR", "Air New Zealand Limited (NS)", "Ordinary Shares",
                         2.060, 2.055, 1.950,
                         10.570, 0.195);
+
+        verify(engine, times(5)).adapter(Instrument.class);
     }
 
     @Test
@@ -256,6 +263,8 @@ class ScrapeServiceTest {
                 .containsExactly("SUM", "Summerset Group Holdings Limited", "Ordinary Shares",
                         7.613, 7.58, 7.09,
                         9.92, 0.775);
+
+        verify(engine, times(5)).adapter(Instrument.class);
     }
 
     @Test
@@ -273,6 +282,8 @@ class ScrapeServiceTest {
                 .containsExactly("ASD", "Smartshares Australian Dividend ETF", "Index Fund",
                         1.494, 1.485, 1.369,
                         11.52, 0.13);
+
+        verify(engine, times(5)).adapter(Instrument.class);
     }
 
     private static String getAIR() {
@@ -1046,28 +1057,35 @@ class ScrapeServiceTest {
                       + "    </tbody>"
                       + "</table>";
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(body)
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> mainBoard = mock(ResponseEntity.class);
+        when(mainBoard.getBody()).thenReturn(body);
+        when(mainBoard.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/markets/NZSX"), eq(String.class))).thenReturn(mainBoard);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getAIR())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> air = mock(ResponseEntity.class);
+        when(air.getBody()).thenReturn(getAIR());
+        when(air.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/AIR"), eq(String.class)))
+                .thenReturn(air);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getASD())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> asd = mock(ResponseEntity.class);
+        when(asd.getBody()).thenReturn(getASD());
+        when(asd.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/ASD"), eq(String.class))).thenReturn(asd);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getNZC())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> nzc = mock(ResponseEntity.class);
+        when(nzc.getBody()).thenReturn(getNZC());
+        when(nzc.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/NZC"), eq(String.class))).thenReturn(nzc);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getSUM())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> sum = mock(ResponseEntity.class);
+        when(sum.getBody()).thenReturn(getSUM());
+        when(sum.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/SUM"), eq(String.class))).thenReturn(sum);
 
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(getZEL())
-                .addHeader("Content-Type", "text/html"));
+        ResponseEntity<String> zel = mock(ResponseEntity.class);
+        when(zel.getBody()).thenReturn(getZEL());
+        when(zel.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(restTemplate.getForEntity(eq("https://www.nzx.com/instruments/ZEL"), eq(String.class))).thenReturn(zel);
     }
 }
