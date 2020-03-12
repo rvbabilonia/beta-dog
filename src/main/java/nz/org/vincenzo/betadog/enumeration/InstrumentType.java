@@ -34,7 +34,11 @@ public enum InstrumentType {
     /**
      * Cumulative preference shares.
      */
-    CUMULATIVE_PREFERENCE_SHARES("Cumulative Preference Shares");
+    CUMULATIVE_PREFERENCE_SHARES("Cumulative Preference Shares"),
+    /**
+     * Unknown.
+     */
+    UNKNOWN("Unknown");
 
     private final String description;
 

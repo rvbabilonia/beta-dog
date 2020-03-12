@@ -15,3 +15,7 @@ sorts them according to price-to-earning ratio or earnings per share to aid an i
 
 2. Available query parameters are `filter` which can be `ALL` (default), `EQUITIES` or `FUNDS` and `order` which can be
 `DEFAULT` (default), `PE_RATIO` or `EPS`.
+
+## Bugs
+
+* reactor.netty.channel.AbortedException: Connection has been closed BEFORE send operation

@@ -5,6 +5,7 @@ import nz.org.vincenzo.betadog.domain.MainBoard;
 import nz.org.vincenzo.betadog.domain.Security;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -31,11 +32,11 @@ public interface ScrapeService {
     Instrument getInstrument(String code);
 
     /**
-     * Returns the {@link List} of {@link Instrument}s.
+     * Returns the {@link Flux} of {@link Instrument}s.
      *
      * @param instrumentFilter the {@link InstrumentFilter}
      * @param sortOrder        the {@link SortOrder}
-     * @return the {@link List} of {@link Instrument}s
+     * @return the {@link Flux} of {@link Instrument}s
      */
     List<Instrument> getInstruments(InstrumentFilter instrumentFilter, SortOrder sortOrder);
 }

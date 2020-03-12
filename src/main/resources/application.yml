@@ -1,0 +1,41 @@
+logging:
+  level:
+    root: DEBUG
+
+springdoc:
+  api-docs:
+    path: /api/v1/api-docs
+  swagger-ui:
+    path: /api/v1/swagger-ui-custom.html
+
+spring:
+  cache:
+    cache-names:
+      - mainBoard
+      - instruments
+    caffeine:
+      spec:
+        - maximumSize: 500
+        - expireAfterAccess: 300s
+
+---
+
+spring:
+  profiles: default
+
+proxy:
+  enabled: false
+  type: HTTP
+  hostname: "http://host"
+  port: 3128
+
+---
+
+spring:
+  profiles: test
+
+proxy:
+  enabled: false
+  type: HTTP
+  hostname: "http://hostname"
+  port: 3128

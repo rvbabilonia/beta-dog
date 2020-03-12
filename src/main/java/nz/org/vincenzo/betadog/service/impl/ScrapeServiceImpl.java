@@ -2,25 +2,27 @@ package nz.org.vincenzo.betadog.service.impl;
 
 import fr.whimtrip.ext.jwhthtmltopojo.HtmlToPojoEngine;
 import fr.whimtrip.ext.jwhthtmltopojo.intrf.HtmlAdapter;
-import io.netty.channel.ChannelOption;
 import nz.org.vincenzo.betadog.domain.Instrument;
 import nz.org.vincenzo.betadog.domain.MainBoard;
 import nz.org.vincenzo.betadog.enumeration.InstrumentFilter;
 import nz.org.vincenzo.betadog.enumeration.InstrumentType;
 import nz.org.vincenzo.betadog.enumeration.SortOrder;
 import nz.org.vincenzo.betadog.service.ScrapeService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
 
-import java.time.Duration;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -29,14 +31,15 @@ import java.util.stream.Collectors;
  * @author Rey Vincent Babilonia
  */
 @Service
+@CacheConfig(cacheNames = {"mainBoard", "instruments"})
 public class ScrapeServiceImpl
         implements ScrapeService {
 
-    private static final String MARKETS = "https://www.nzx.com/markets/NZSX";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScrapeServiceImpl.class);
 
-    private static final String INSTRUMENTS = "https://www.nzx.com/instruments/";
+    private static final String MARKETS = "/markets/NZSX";
 
-    private static final HtmlToPojoEngine ENGINE = HtmlToPojoEngine.create();
+    private static final String INSTRUMENTS = "/instruments/";
 
     private static final List<String> UNITS_IN_EQUITY = List.of("GMT", "VHP");
 
@@ -46,81 +49,154 @@ public class ScrapeServiceImpl
             InstrumentType.CUMULATIVE_PREFERENCE_SHARES, InstrumentType.OPTION, InstrumentType.CONVERTIBLE_NOTES,
             InstrumentType.EQUITY_WARRANTS);
 
-    @Override
-    public MainBoard getMainBoard() {
-        Mono<ResponseEntity<String>> mono = getWebClient().get()
-                .uri(MARKETS)
-                .exchange()
-                .timeout(Duration.ofSeconds(10))
-                .flatMap(clientResponse -> clientResponse.toEntity(String.class));
+    private final HtmlToPojoEngine engine;
 
-        String html = Objects.requireNonNull(mono.single().block()).getBody();
+    private final WebClient webClient;
 
-        HtmlAdapter<MainBoard> adapter = ENGINE.adapter(MainBoard.class);
-
-        return adapter.fromHtml(html);
+    /**
+     * Default constructor.
+     *
+     * @param engine    the {@link HtmlToPojoEngine}
+     * @param webClient the {@link WebClient}
+     */
+    @Autowired
+    public ScrapeServiceImpl(HtmlToPojoEngine engine, WebClient webClient) {
+        this.engine = engine;
+        this.webClient = webClient;
     }
 
+    @Cacheable("mainBoard")
+    @Override
+    public MainBoard getMainBoard() {
+        Mono<String> mono = webClient
+                .get()
+                .uri(MARKETS)
+                .retrieve()
+                .bodyToMono(String.class);
+
+        AtomicReference<String> html = new AtomicReference<>();
+        Disposable disposable = mono.subscribe(html::set);
+
+        int i = 0;
+        do {
+            i++;
+            if (i == 5) {
+                html.set("");
+            }
+            try {
+                LOGGER.info("Waiting for [NZSX]...");
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                LOGGER.error(e.getMessage());
+            }
+        } while (html.get() == null);
+
+        disposable.dispose();
+
+        if (!html.get().isBlank()) {
+            HtmlAdapter<MainBoard> adapter = engine.adapter(MainBoard.class);
+
+            return adapter.fromHtml(html.get());
+        } else {
+            return new MainBoard();
+        }
+    }
+
+    @Cacheable("instruments")
     @Override
     public Instrument getInstrument(final String code) {
-        Mono<ResponseEntity<String>> mono = getWebClient().get()
+        Mono<String> mono = webClient
+                .get()
                 .uri(INSTRUMENTS + code)
-                .exchange()
-                .timeout(Duration.ofSeconds(10))
-                .flatMap(clientResponse -> clientResponse.toEntity(String.class));
+                .retrieve()
+                .bodyToMono(String.class);
 
-        String html = Objects.requireNonNull(mono.single().block()).getBody();
+        AtomicReference<String> html = new AtomicReference<>();
+        Disposable disposable = mono.subscribe(html::set);
 
-        HtmlAdapter<Instrument> adapter = ENGINE.adapter(Instrument.class);
+        int i = 0;
+        do {
+            i++;
+            if (i == 5) {
+                html.set("");
+            }
+            try {
+                LOGGER.info("Waiting for [{}]...", code);
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                LOGGER.error(e.getMessage());
+            }
+        } while (html.get() == null);
 
-        return adapter.fromHtml(html);
+        disposable.dispose();
+
+        if (!html.get().isBlank()) {
+            HtmlAdapter<Instrument> adapter = engine.adapter(Instrument.class);
+
+            return adapter.fromHtml(html.get());
+        } else {
+            Instrument.Snapshot snapshot = new Instrument.Snapshot();
+            snapshot.setCode(code);
+            snapshot.setInstrumentType(InstrumentType.UNKNOWN.getDescription());
+
+            Instrument instrument = new Instrument();
+            instrument.setSnapshot(snapshot);
+
+            return instrument;
+        }
     }
 
     @Override
     public List<Instrument> getInstruments(InstrumentFilter instrumentFilter, SortOrder sortOrder) {
         MainBoard mainBoard = getMainBoard();
 
-        List<Instrument> instruments = mainBoard.getSecurities().stream()
+        List<Instrument> instruments = mainBoard
+                .getSecurities()
+                .parallelStream()
                 .map(security -> getInstrument(security.getCode()))
                 .collect(Collectors.toCollection(LinkedList::new));
 
         if (InstrumentFilter.EQUITIES == instrumentFilter) {
-            instruments = instruments.stream()
-                    .filter(o -> {
+            instruments = instruments
+                    .stream()
+                    .filter(instrument -> {
                         InstrumentType instrumentType =
-                                InstrumentType.getInstrumentType(o.getSnapshot().getInstrumentType());
+                                InstrumentType.getInstrumentType(instrument.getSnapshot().getInstrumentType());
                         return EQUITIES.contains(instrumentType)
-                                || UNITS_IN_EQUITY.contains(o.getSnapshot().getCode());
+                               || UNITS_IN_EQUITY.contains(instrument.getSnapshot().getCode());
                     })
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
         } else if (InstrumentFilter.FUNDS == instrumentFilter) {
-            instruments = instruments.stream()
-                    .filter(o -> {
+            instruments = instruments
+                    .stream()
+                    .filter(instrument -> {
                         InstrumentType instrumentType =
-                                InstrumentType.getInstrumentType(o.getSnapshot().getInstrumentType());
+                                InstrumentType.getInstrumentType(instrument.getSnapshot().getInstrumentType());
                         return InstrumentType.FUND == instrumentType
-                                || UNITS_IN_FUND.contains(o.getSnapshot().getCode());
+                               || UNITS_IN_FUND.contains(instrument.getSnapshot().getCode());
                     })
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toCollection(LinkedList::new));
         }
 
         if (SortOrder.PE_RATIO == sortOrder) {
-            instruments.sort(Comparator.comparingDouble(o -> o.getFundamental().getPriceToEarningsRatio()));
+            // the lower the better
+            instruments = instruments
+                    .stream()
+                    .sorted(Comparator.comparingDouble(instrument -> instrument.getFundamental().getPriceToEarningsRatio()))
+                    .filter(instrument -> instrument.getFundamental().getPriceToEarningsRatio() > 0)
+                    .collect(Collectors.toList());
         } else if (SortOrder.EPS == sortOrder) {
-            instruments.sort(Comparator.comparingDouble(o -> o.getFundamental().getEarningsPerShare()));
+            // the higher the better
+            instruments = instruments
+                    .stream()
+                    .sorted(Comparator.comparingDouble(instrument -> instrument.getFundamental().getEarningsPerShare()))
+                    .filter(instrument -> instrument.getFundamental().getEarningsPerShare() > 0)
+                    .collect(Collectors.toList());
+            Collections.reverse(instruments);
         } else {
-            instruments.sort(Comparator.comparing(o -> o.getSnapshot().getCode()));
+            instruments.sort(Comparator.comparing(instrument -> instrument.getSnapshot().getCode()));
         }
 
         return instruments;
-    }
-
-    private static WebClient getWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .tcpConfiguration(tcpClient ->
-                        tcpClient.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5 * 60 * 1000));
-        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-
-        return WebClient.builder().clientConnector(connector).build();
     }
 }
