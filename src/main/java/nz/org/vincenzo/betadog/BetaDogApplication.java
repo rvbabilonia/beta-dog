@@ -52,8 +52,10 @@ public class BetaDogApplication {
                                           .port(proxyConfiguration.getPort()));
         }
 
+        HttpClient httpClient = HttpClient.from(tcpClient).wiretap(true);
+
         return WebClient.builder()
-                        .clientConnector(new ReactorClientHttpConnector(HttpClient.from(tcpClient).wiretap(true).compress(true)))
+                        .clientConnector(new ReactorClientHttpConnector(httpClient))
                         .baseUrl("https://www.nzx.com")
                         .build();
     }

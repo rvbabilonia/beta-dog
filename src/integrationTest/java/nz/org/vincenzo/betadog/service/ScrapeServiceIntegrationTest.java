@@ -58,7 +58,7 @@ class ScrapeServiceIntegrationTest {
     void getEquityInstrumentsByPERatio() {
         List<Instrument> instruments = scrapeService.getInstruments(InstrumentFilter.EQUITIES, SortOrder.PE_RATIO);
 
-        // 145 equities buto only 100 have positive P/E ratio as of 10 March 2020
+        // 145 equities but only 100 have positive P/E ratio as of 10 March 2020
         assertThat(instruments).hasSize(100);
     }
 

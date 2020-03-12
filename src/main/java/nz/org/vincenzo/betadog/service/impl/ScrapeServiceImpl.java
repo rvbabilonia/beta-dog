@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.Disposable;
@@ -71,6 +72,7 @@ public class ScrapeServiceImpl
         Mono<String> mono = webClient
                 .get()
                 .uri(MARKETS)
+                .accept(MediaType.TEXT_HTML)
                 .retrieve()
                 .bodyToMono(String.class);
 
@@ -108,6 +110,7 @@ public class ScrapeServiceImpl
         Mono<String> mono = webClient
                 .get()
                 .uri(INSTRUMENTS + code)
+                .accept(MediaType.TEXT_HTML)
                 .retrieve()
                 .bodyToMono(String.class);
 
