@@ -8,3 +8,11 @@ script:
 
 notifications:
   email: false
+
+deploy:
+  provider: heroku
+  api_key: $API_KEY
+  app:
+    master: beta-dog
+  run:
+    - "heroku config:add VERSION_NUMBER=$VERSION_NUMBER"
