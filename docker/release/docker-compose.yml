@@ -4,9 +4,7 @@ services:
     build:
       context: ./../../build
       dockerfile: Dockerfile
-      args:
-        app_version: ${APP_VERSION}
-    image: beta-dog:${APP_VERSION}
+    image: beta-dog
     container_name: beta-dog
     ports:
       - 8080:8080
