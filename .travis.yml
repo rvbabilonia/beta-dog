@@ -8,24 +8,3 @@ script:
 
 notifications:
   email: false
-
-addons:
-  artifacts:
-    s3_region: "ap-southeast-2"
-
-deploy:
-  - provider: s3
-    access_key_id: $ARTIFACTS_KEY
-    secret_access_key: $ARTIFACTS_SECRET
-    region: "ap-southeast-2"
-    bucket: $ARTIFACTS_BUCKET
-    skip_cleanup: true
-    local_dir: build/distributions
-
-  - provider: codedeploy
-    access_key_id: $ARTIFACTS_KEY
-    secret_access_key: $ARTIFACTS_SECRET
-    region: "ap-southeast-2"
-    application: "beta-dog"
-    deployment_group: "beta-dog-deployment-group"
-    wait_until_deployed: true
