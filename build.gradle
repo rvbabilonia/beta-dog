@@ -93,6 +93,7 @@ testSets {
 
 bootJar {
     mainClassName = "nz.org.vincenzo.betadog.BetaDogApplication"
+    archiveFileName = 'beta-dog.jar'
 }
 
 task copyYml(type: Copy) {

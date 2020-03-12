@@ -1,1 +1,1 @@
-web: java -jar target/beta-dog-$VERSION_NUMBER.jar
+web: java -jar build/libs/beta-dog.jar
