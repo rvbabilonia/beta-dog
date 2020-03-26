@@ -38,7 +38,6 @@ class ScrapeServiceIntegrationTest {
                 .containsExactly("AIR", "Air New Zealand Limited (NS)", "Ordinary Shares");
     }
 
-
     @Test
     void getInstruments() {
         List<Instrument> instruments = scrapeService.getInstruments(InstrumentFilter.ALL, SortOrder.DEFAULT);
@@ -56,8 +55,8 @@ class ScrapeServiceIntegrationTest {
     void getEquityInstrumentsByPERatio() {
         List<Instrument> instruments = scrapeService.getInstruments(InstrumentFilter.EQUITIES, SortOrder.PE_RATIO);
 
-        // 145 equities but only 100 have positive P/E ratio as of 10 March 2020
-        assertThat(instruments).hasSize(100);
+        // 145 equities but only 101 have positive P/E ratio as of 26 March 2020
+        assertThat(instruments).hasSize(101);
     }
 
     @Test
