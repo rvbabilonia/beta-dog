@@ -84,7 +84,7 @@ testSets {
 }
 
 bootJar {
-    mainClassName = "nz.org.vincenzo.betadog.BetaDogApplication"
+    mainClassName = "org.vincenzolabs.betadog.BetaDogApplication"
     archiveFileName = 'beta-dog.jar'
 }
 
