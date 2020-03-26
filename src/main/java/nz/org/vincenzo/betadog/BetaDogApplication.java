@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
@@ -34,7 +35,12 @@ public class BetaDogApplication {
      */
     @Bean
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        int timeout = 2 * 60 * 1000; // 2 minutes
+
+        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
+        clientHttpRequestFactory.setConnectTimeout(timeout);
+
+        return new RestTemplate(clientHttpRequestFactory);
     }
 
     /**
