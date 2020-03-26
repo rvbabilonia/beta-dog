@@ -2,9 +2,9 @@ FROM amazoncorretto:11.0.4
 
 ARG app_version
 
-ADD libs/beta-dog.jar /app/app.jar
+ADD build/libs/beta-dog.jar /app/app.jar
 
-ADD application.yml /app/application.yml
+ADD build/application.yml /app/application.yml
 
 ENV TZ Pacific/Auckland
 
