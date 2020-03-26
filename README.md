@@ -11,9 +11,9 @@ sorts them according to price-to-earning ratio or earnings per share to aid a ne
 
 ## Usage
 
-1. To view all the instruments, go to https://beta-dog.herokuapp.com/api/v1/instruments.
+1. To view all the instruments, go to https://beta-dog.vincenzolabs.org/api/v1/instruments.
 
 2. Available query parameters are `filter` which can be `ALL` (default), `EQUITIES` or `FUNDS` and `order` which can be
-`DEFAULT` (default), `PE_RATIO` or `EPS`.
+`DEFAULT` (default), `PE_RATIO` or `EPS` e.g. https://beta-dog.vincenzolabs.org/api/v1/instruments?filter=EQUITIES&order=EPS.
 
-3. To view Swagger UI, go to https://beta-dog.herokuapp.com/api/v1/swagger-ui-custom.html.
+3. To view Swagger UI, go to https://beta-dog.vincenzolabs.org/api/v1/swagger-ui-custom.html.
