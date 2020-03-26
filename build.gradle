@@ -93,9 +93,14 @@ task copyYml(type: Copy) {
     into 'build'
 }
 
-task copyDocker(type: Copy) {
-    from 'docker/release'
+task copyDockerCompose(type: Copy) {
+    from 'docker-compose.yml'
     into 'build'
 }
 
-build.dependsOn copyDocker, copyYml, bootJar
+task copyDockerfile(type: Copy) {
+    from 'Dockerfile'
+    into 'build'
+}
+
+build.dependsOn copyDockerCompose, copyDockerfile, copyYml, bootJar
