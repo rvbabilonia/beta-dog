@@ -17,3 +17,9 @@ sorts them according to price-to-earning ratio or earnings per share to aid a ne
 `DEFAULT` (default), `PE_RATIO` or `EPS` e.g. https://beta-dog.vincenzolabs.org/api/v1/instruments?filter=EQUITIES&order=EPS.
 
 3. To view Swagger UI, go to https://beta-dog.vincenzolabs.org/api/v1/swagger-ui-custom.html.
+
+## Infrastructure
+
+Beta-Dog is Dockerized and hosted on a Kubernetes cluster provided by https://kubesail.com.
+
+DNS record is stored in Amazon Route 53 and SSL certificate is provided by AWS Certificate Manager.  

@@ -36,6 +36,10 @@ public enum InstrumentType {
      */
     CUMULATIVE_PREFERENCE_SHARES("Cumulative Preference Shares"),
     /**
+     * Tradeable rights issued by cash-strapped companies.
+     */
+    TRADEABLE_RIGHTS("Tradeable Rights"),
+    /**
      * Unknown.
      */
     UNKNOWN("Unknown");
@@ -73,6 +77,6 @@ public enum InstrumentType {
             }
         }
 
-        throw new IllegalArgumentException("Description [" + description + "] is invalid");
+        throw new IllegalArgumentException("Instrument type [" + description + "] is invalid");
     }
 }
