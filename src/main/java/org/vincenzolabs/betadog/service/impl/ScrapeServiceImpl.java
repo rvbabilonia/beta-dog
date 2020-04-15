@@ -43,7 +43,7 @@ public class ScrapeServiceImpl
 
     private static final List<InstrumentType> EQUITIES = List.of(InstrumentType.ORDINARY_SHARES,
             InstrumentType.CUMULATIVE_PREFERENCE_SHARES, InstrumentType.OPTION, InstrumentType.CONVERTIBLE_NOTES,
-            InstrumentType.EQUITY_WARRANTS);
+            InstrumentType.EQUITY_WARRANTS, InstrumentType.TRADEABLE_RIGHTS);
 
     private final HtmlToPojoEngine engine;
 
