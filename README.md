@@ -20,6 +20,8 @@ sorts them according to price-to-earning ratio or earnings per share to aid a ne
 
 ## Infrastructure
 
-Beta-Dog is Dockerized and hosted on a Kubernetes cluster provided by https://kubesail.com.
+Beta-Dog is Dockerized (`docker pull rvbabilonia/beta-dog`) and hosted in https://hub.docker.com/r/rvbabilonia/beta-dog.
+
+A running instance is running on a Kubernetes cluster provided by https://kubesail.com.
 
 DNS record is stored in Amazon Route 53 and SSL certificate is provided by AWS Certificate Manager.  
