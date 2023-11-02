@@ -1,6 +1,7 @@
 package org.vincenzolabs.betadog.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.vincenzolabs.betadog.service.ScrapeService;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
@@ -101,6 +103,15 @@ class ScrapeControllerTest {
                      .accept(MediaType.APPLICATION_JSON)
                      .exchange()
                      .expectStatus().isOk()
-                     .expectBody(String.class).isEqualTo(objectMapper.writeValueAsString(List.of(air, amp)));
+                     .expectBody(String.class)
+                     .value(body -> {
+                         try {
+                             JsonNode bodyJsonNode = objectMapper.readTree(body);
+                             JsonNode expectedJsonNode = objectMapper.readTree(objectMapper.writeValueAsString(List.of(air, amp)));
+                             assertEquals(expectedJsonNode, bodyJsonNode);
+                         } catch (JsonProcessingException e) {
+                             throw new AssertionError(e);
+                         }
+                     });
     }
 }
